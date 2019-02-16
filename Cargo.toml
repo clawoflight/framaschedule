@@ -1,0 +1,9 @@
+[package]
+name = "framaschedule"
+version = "0.1.0"
+authors = ["Bennett Piater <bennett.piater@student.uibk.ac.at>"]
+edition = "2018"
+
+[dependencies]
+csv = "1.0"
+rand = "0.6"
