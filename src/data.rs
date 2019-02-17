@@ -8,19 +8,17 @@ pub enum Response {
     No,
     IfNeedBe,
 }
+
 impl Response {
     pub fn from_str(s: &str) -> Result<Response, IoError> {
-        if s == "Yes" {
-            Ok(Response::Yes)
-        } else if s == "No" {
-            Ok(Response::No)
-        } else if s == "Ifneedbe" {
-            Ok(Response::IfNeedBe)
-        } else {
-            Err(IoError::new(
+        match s {
+            "Yes" => Ok(Response::Yes),
+            "No" => Ok(Response::No),
+            "Ifneedbe" => Ok(Response::IfNeedBe),
+            _ => Err(IoError::new(
                 IoErrorKind::Other,
                 format!("Invalid framadate response: {}", s),
-            ))
+            )),
         }
     }
 }
