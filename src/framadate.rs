@@ -5,13 +5,15 @@ pub fn read_data(file_name: &str) -> Result<PollData, IoError> {
     let mut data = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
 
-    for h in rdr.headers()? {
-        if h != "" {
-            data.push((h.to_string(), HashMap::new()));
+    // TODO transform date to DD.MM for my use-case
+    for time in rdr.headers()? {
+        if time != "" {
+            data.push(PollColumn::new(time));
         }
     }
     for (i, r) in rdr.records().enumerate() {
-        // Ignore the times, I don't need them TODO add them to the names of the days
+        // Ignore the times, I don't need them
+        // TODO add them to the names of the days - probably best to push the PollColumn here in that case
         if i == 0 {
             continue;
         }
@@ -27,8 +29,8 @@ pub fn read_data(file_name: &str) -> Result<PollData, IoError> {
                 continue;
             }
             data[i - 1]
-                .1
-                .insert(name.to_string(), Response::from_str(response)?);
+                .responses
+                .insert(name.to_owned(), Response::from_str(response)?);
         }
     }
 

@@ -14,7 +14,7 @@ impl Response {
         match s {
             "Yes" => Ok(Response::Yes),
             "No" => Ok(Response::No),
-            "Ifneedbe" => Ok(Response::IfNeedBe),
+            "Ifneedbe" | "IfNeedBe" => Ok(Response::IfNeedBe),
             _ => Err(IoError::new(
                 IoErrorKind::Other,
                 format!("Invalid framadate response: {}", s),
@@ -23,7 +23,21 @@ impl Response {
     }
 }
 
-// TODO create proper datatypes
 pub type TimePoint = String;
 pub type Name = String;
-pub type PollData = Vec<(TimePoint, HashMap<Name, Response>)>;
+pub type PollData = Vec<PollColumn>;
+
+#[derive(Debug)]
+pub struct PollColumn {
+    pub time: TimePoint,
+    pub responses: HashMap<Name, Response>,
+}
+
+impl PollColumn {
+    pub fn new(time: &str) -> PollColumn {
+        PollColumn {
+            time: time.to_owned(),
+            responses: HashMap::new(),
+        }
+    }
+}

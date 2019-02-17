@@ -1,6 +1,4 @@
 use crate::data::*;
-use rand::seq::SliceRandom;
-use rand::thread_rng;
 use std::collections::HashMap;
 
 // TODO create proper datatypes
@@ -53,14 +51,14 @@ pub fn compute_all_schedules(data: &PollData) -> OrderedResults {
 
 fn compute_all_schedules_(data: &PollData, cur_sched: Schedule, results: &mut OrderedResults) {
     // Allow early cutoff: don't assign people much more than necessary and calculate cost, but drop immediately
-    let max_occur = data.len() / data[0].1.len() + 1;
+    let max_occur = data.len() / data[0].responses.len() + 1;
 
     if cur_sched.len() == data.len() {
         *results = add_result(results.clone(), calc_schedule_cost(cur_sched, data))
     } else {
         let day = &data[cur_sched.len()];
-        // TODO shuffle pairs here to randomize
-        for (p, r) in &day.1 {
+        // NOTE since the hash is not deterministic, this implicitly shuffles the names
+        for (p, r) in &day.responses {
             if occur(&cur_sched, p) == max_occur {
                 continue;
             }
@@ -68,7 +66,7 @@ fn compute_all_schedules_(data: &PollData, cur_sched: Schedule, results: &mut Or
                 Response::No => (),
                 _ => {
                     let mut new_sched = cur_sched.clone();
-                    new_sched.push((day.0.to_string(), p.to_string()));
+                    new_sched.push((day.time.to_owned(), p.to_owned()));
                     compute_all_schedules_(data, new_sched, results);
                 }
             }
@@ -100,7 +98,7 @@ fn calc_avg_distance_components(s: &Schedule) -> f32 {
 fn calc_ifneedbe_components(s: &Schedule, data: &PollData) -> f32 {
     let mut result = 0.0;
     for (i, (_, person)) in s.iter().enumerate() {
-        if let Some(Response::IfNeedBe) = data[i].1.get(person) {
+        if let Some(Response::IfNeedBe) = data[i].responses.get(person) {
             result += 1.0;
         }
     }
