@@ -3,6 +3,8 @@ use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::collections::HashMap;
 
+// TODO create proper datatypes
+
 pub type Schedule = Vec<(TimePoint, Name)>;
 fn occur(s: &Schedule, n: &str) -> usize {
     s.iter().filter(|&(_, name)| name == n).count()
@@ -114,7 +116,6 @@ fn calc_schedule_cost(s: Schedule, data: &PollData) -> ScheduleWithCost {
         let occ = person_occurrences.entry(person).or_insert(0);
         *occ += 1;
     }
-    // TODO I could increase occurrences by 1 for every IfNeedBe here...
 
     // TODO include occurrences in ScheduleWithCost to be able to print them
     for occ in person_occurrences.values() {

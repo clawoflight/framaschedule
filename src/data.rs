@@ -25,6 +25,7 @@ impl Response {
     }
 }
 
+// TODO create proper datatypes
 pub type TimePoint = String;
 pub type Name = String;
 pub type PollData = Vec<(TimePoint, HashMap<Name, Response>)>;
