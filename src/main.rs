@@ -1,5 +1,5 @@
+use framaschedule::data::*;
 use framaschedule::framadate;
-use framaschedule::framadate::IoError;
 use framaschedule::scheduling;
 
 fn main() -> Result<(), IoError> {
