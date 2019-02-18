@@ -8,7 +8,6 @@ fn main() -> Result<(), IoError> {
 
     if let BestSchedules::Two(r1, r2) = scheduling::compute_all_schedules(&data) {
         r1.print();
-        println!("");
         r2.print();
     }
 

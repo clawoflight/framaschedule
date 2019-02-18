@@ -48,6 +48,7 @@ impl EvaluatedSchedule {
         for (name, count) in counts {
             println!("{}: {}", name, count)
         }
+        println!();
     }
 }
 
