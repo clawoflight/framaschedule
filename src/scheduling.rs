@@ -131,7 +131,7 @@ fn calc_avg_distance_components(s: &Schedule) -> f32 {
     for (i, person) in s.iter().map(|e| &e.name).enumerate() {
         let last_seen_i = last_seen.entry(person).or_insert(i);
         let dsts = dsts.entry(person).or_insert(Vec::new());
-        let dst = i as f32 - *last_seen_i as f32;
+        let dst = (i - *last_seen_i) as f32;
         if dst > 0.0 {
             dsts.push(dst);
         }
@@ -141,7 +141,9 @@ fn calc_avg_distance_components(s: &Schedule) -> f32 {
     let mut result = 0.0;
     for dsts in dsts.values() {
         let avg_dst: f32 = dsts.iter().sum();
-        result += 1.0 / (avg_dst * avg_dst);
+        if avg_dst > 0.0 {
+            result += 1.0 / (avg_dst * avg_dst);
+        }
     }
     result
 }
