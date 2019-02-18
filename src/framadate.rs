@@ -12,9 +12,14 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
         }
     }
     for (i, r) in rdr.records().enumerate() {
-        // Ignore the times, I don't need them
-        // TODO add them to the names of the days - probably best to push the PollColumn here in that case
+        // Parse the times
         if i == 0 {
+            for (i, time) in r?.iter().enumerate() {
+                if i == 0 || i - 1 == data.len() {
+                    continue;
+                }
+                data[i - 1].time += &format!(" {}", time);
+            }
             continue;
         }
 
