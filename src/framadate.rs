@@ -8,7 +8,12 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     // TODO transform date to DD.MM for my use-case
     for time in rdr.headers()? {
         if time != "" {
-            data.push(PollColumn::new(time));
+            let (month, day) = scan_fmt!(time, "{*d}-{d}-{d}", i32, i32);
+            data.push(PollColumn::new(&format!(
+                "{:02}.{:02}.",
+                day.unwrap(),
+                month.unwrap()
+            )));
         }
     }
     for (i, r) in rdr.records().enumerate() {
