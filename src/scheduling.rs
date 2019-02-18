@@ -48,36 +48,49 @@ impl EvaluatedSchedule {
         for (name, count) in counts {
             println!("{}: {}", name, count)
         }
+        println!();
     }
 }
 
 //pub type BestSchedules = (Option<EvaluatedSchedule>, Option<EvaluatedSchedule>);
 #[derive(Debug, Clone)]
 pub enum BestSchedules {
-    One(EvaluatedSchedule),
-    Two(EvaluatedSchedule, EvaluatedSchedule),
+    One(Vec<EvaluatedSchedule>),
+    Two(Vec<EvaluatedSchedule>, Vec<EvaluatedSchedule>),
     None,
 }
 
 fn keep_best(res: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
     match res {
         BestSchedules::One(r1) => {
-            if r1.cost > new.cost {
-                BestSchedules::Two(new, r1.clone())
+            if r1[0].cost > new.cost {
+                BestSchedules::Two(vec![new], r1.clone())
+            } else if r1[0].cost == new.cost {
+                let mut new_v = r1.clone();
+                new_v.push(new);
+                BestSchedules::One(new_v)
             } else {
-                BestSchedules::Two(r1.clone(), new)
+                BestSchedules::Two(r1.clone(), vec![new])
             }
         }
         BestSchedules::Two(r1, r2) => {
-            if r1.cost > new.cost {
-                BestSchedules::Two(new, r1.clone())
-            } else if r2.cost > new.cost {
-                BestSchedules::Two(r1.clone(), new)
+            if r1[0].cost > new.cost {
+                BestSchedules::Two(vec![new], r1.clone())
+            } else if r1[0].cost == new.cost {
+                let mut new_v = r1.clone();
+                new_v.push(new);
+                BestSchedules::Two(new_v, r2.clone())
+            } else if r2[0].cost > new.cost {
+                BestSchedules::Two(r1.clone(), vec![new])
+            } else if r2[0].cost == new.cost {
+                let mut new_v = r2.clone();
+                new_v.push(new);
+                BestSchedules::Two(r1.clone(), new_v)
             } else {
                 BestSchedules::Two(r1.clone(), r2.clone())
             }
         }
-        BestSchedules::None => BestSchedules::One(new),
+        BestSchedules::None => BestSchedules::One(vec![new]),
     }
 }
 
