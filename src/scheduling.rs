@@ -8,7 +8,7 @@ pub struct ScheduleEntry {
 }
 
 impl ScheduleEntry {
-    pub fn new(time: TimePoint, name: Name) -> ScheduleEntry {
+    fn new(time: TimePoint, name: Name) -> ScheduleEntry {
         ScheduleEntry { time, name }
     }
 }
@@ -27,7 +27,7 @@ pub struct EvaluatedSchedule {
 }
 
 impl EvaluatedSchedule {
-    pub fn new(entries: Schedule, cost: f32, name_counts: Vec<(Name, usize)>) -> EvaluatedSchedule {
+    fn new(entries: Schedule, cost: f32, name_counts: Vec<(Name, usize)>) -> EvaluatedSchedule {
         EvaluatedSchedule {
             entries,
             cost,
@@ -51,45 +51,48 @@ impl EvaluatedSchedule {
     }
 }
 
-//pub type ScheduleWithCost = (f32, Schedule);
-pub type OrderedResults = (Option<EvaluatedSchedule>, Option<EvaluatedSchedule>);
+//pub type BestSchedules = (Option<EvaluatedSchedule>, Option<EvaluatedSchedule>);
+#[derive(Debug, Clone)]
+pub enum BestSchedules {
+    One(EvaluatedSchedule),
+    Two(EvaluatedSchedule, EvaluatedSchedule),
+    None,
+}
 
-// TODO use vectors and keep all schedules with same score
-fn keep_best(res: OrderedResults, new: EvaluatedSchedule) -> OrderedResults {
+fn keep_best(res: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
     match res {
-        (Some(r1), None) => {
+        BestSchedules::One(r1) => {
             if r1.cost > new.cost {
-                (Some(new), Some(r1))
+                BestSchedules::Two(new, r1.clone())
             } else {
-                (Some(r1), Some(new))
+                BestSchedules::Two(r1.clone(), new)
             }
         }
-        (Some(r1), Some(r2)) => {
+        BestSchedules::Two(r1, r2) => {
             if r1.cost > new.cost {
-                (Some(new), Some(r1))
+                BestSchedules::Two(new, r1.clone())
             } else if r2.cost > new.cost {
-                (Some(r1), Some(new))
+                BestSchedules::Two(r1.clone(), new)
             } else {
-                (Some(r1), Some(r2))
+                BestSchedules::Two(r1.clone(), r2.clone())
             }
         }
-        (None, None) => (Some(new), None),
-        (None, Some(_)) => unreachable!(),
+        BestSchedules::None => BestSchedules::One(new),
     }
 }
 
-pub fn compute_all_schedules(data: &PollData) -> OrderedResults {
-    let mut r = (None, None);
+pub fn compute_all_schedules(data: &PollData) -> BestSchedules {
+    let mut r = BestSchedules::None;
     compute_all_schedules_(data, vec![], &mut r);
     r
 }
 
-fn compute_all_schedules_(data: &PollData, cur_sched: Schedule, results: &mut OrderedResults) {
+fn compute_all_schedules_(data: &PollData, cur_sched: Schedule, results: &mut BestSchedules) {
     // Allow early cutoff: don't assign people much more than necessary and calculate cost, but drop immediately
     let max_occur = data.len() / data[0].responses.len() + 1;
 
     if cur_sched.len() == data.len() {
-        *results = keep_best(results.clone(), evaluate(cur_sched, data))
+        *results = keep_best(results, evaluate(cur_sched, data))
     } else {
         let day = &data[cur_sched.len()];
         // NOTE since the hash is not deterministic, this implicitly shuffles the names
