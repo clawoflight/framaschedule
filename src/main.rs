@@ -6,9 +6,9 @@ fn main() -> Result<(), IoError> {
     let data = framadate::read_data("/home/bennett/Downloads/Bild Feber-Mai.csv")?;
 
     if let (Some(r1), Some(r2)) = scheduling::compute_all_schedules(&data) {
-        scheduling::print_schedule(r1);
+        r1.print();
         println!("");
-        scheduling::print_schedule(r2);
+        r2.print();
     }
 
     Ok(())
