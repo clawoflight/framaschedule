@@ -1,7 +1,7 @@
 use crate::data::*;
 use csv::Reader;
 
-pub fn read_data(file_name: &str) -> Result<PollData, IoError> {
+pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     let mut data = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
 

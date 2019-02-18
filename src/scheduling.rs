@@ -1,14 +1,15 @@
 use crate::data::*;
 use std::collections::HashMap;
+use std::error::Error;
 
 #[derive(Debug, Clone)]
 pub struct ScheduleEntry {
-    pub time: TimePoint,
+    pub time: Slot,
     pub name: Name,
 }
 
 impl ScheduleEntry {
-    fn new(time: TimePoint, name: Name) -> ScheduleEntry {
+    fn new(time: Slot, name: Name) -> ScheduleEntry {
         ScheduleEntry { time, name }
     }
 }
@@ -35,7 +36,6 @@ impl EvaluatedSchedule {
         }
     }
 
-    // TODO add CSV export
     pub fn print(&self) {
         let mut counts = self.name_counts.clone();
         counts.sort();
@@ -49,6 +49,17 @@ impl EvaluatedSchedule {
             println!("{}: {}", name, count)
         }
         println!();
+    }
+
+    pub fn write_csv(&self, path: &str) -> Result<(), Box<Error>> {
+        let mut writer = csv::Writer::from_path(path)?;
+        writer.write_record(&["slot", "name"])?;
+
+        for entry in &self.entries {
+            writer.write_record(&[&entry.time, &entry.name])?;
+        }
+        writer.flush()?;
+        Ok(())
     }
 }
 

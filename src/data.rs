@@ -1,6 +1,6 @@
+pub use simple_error::SimpleError;
 pub use std::collections::HashMap;
-pub use std::io::Error as IoError;
-use std::io::ErrorKind as IoErrorKind;
+pub use std::error::Error;
 
 #[derive(Debug)]
 pub enum Response {
@@ -10,26 +10,26 @@ pub enum Response {
 }
 
 impl Response {
-    pub fn from_str(s: &str) -> Result<Response, IoError> {
+    pub fn from_str(s: &str) -> Result<Response, SimpleError> {
         match s {
             "Yes" => Ok(Response::Yes),
             "No" => Ok(Response::No),
             "Ifneedbe" | "IfNeedBe" => Ok(Response::IfNeedBe),
-            _ => Err(IoError::new(
-                IoErrorKind::Other,
-                format!("Invalid framadate response: {}", s),
-            )),
+            _ => Err(SimpleError::new(format!(
+                "Invalid framadate response string: {}",
+                s
+            ))),
         }
     }
 }
 
-pub type TimePoint = String;
+pub type Slot = String;
 pub type Name = String;
 pub type PollData = Vec<PollColumn>;
 
 #[derive(Debug)]
 pub struct PollColumn {
-    pub time: TimePoint,
+    pub time: Slot,
     pub responses: HashMap<Name, Response>,
 }
 
