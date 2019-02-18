@@ -27,20 +27,27 @@ pub struct EvaluatedSchedule {
 }
 
 impl EvaluatedSchedule {
-    pub fn new(entries: Schedule, cost: f32) -> EvaluatedSchedule {
+    pub fn new(entries: Schedule, cost: f32, name_counts: Vec<(Name, usize)>) -> EvaluatedSchedule {
         EvaluatedSchedule {
             entries,
             cost,
-            name_counts: Vec::new(),
+            name_counts,
         }
     }
 
     // TODO add CSV export
     pub fn print(&self) {
+        let mut counts = self.name_counts.clone();
+        counts.sort();
+
         for entry in &self.entries {
             println!("{}:\t{}", entry.time, entry.name);
         }
         println!("\nCost: {}", self.cost);
+        println!("\nStats:");
+        for (name, count) in counts {
+            println!("{}: {}", name, count)
+        }
     }
 }
 
@@ -143,12 +150,13 @@ fn evaluate(s: Schedule, data: &PollData) -> EvaluatedSchedule {
         *occ += 1;
     }
 
-    // TODO include occurrences in EvaluatedSchedule to be able to print them
-    for occ in person_occurrences.values() {
+    let mut occ_stats = Vec::new();
+    for (person, occ) in person_occurrences {
         cost += (occ * occ) as f32;
+        occ_stats.push((person.to_owned(), occ))
     }
     cost += calc_avg_distance_components(&s);
     cost += calc_ifneedbe_components(&s, data);
 
-    EvaluatedSchedule::new(s, cost)
+    EvaluatedSchedule::new(s, cost, occ_stats)
 }
