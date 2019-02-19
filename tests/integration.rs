@@ -21,3 +21,15 @@ fn impossible_schedule() {
         _ => panic!("Expected no solution to exist"),
     }
 }
+
+#[test]
+fn impossible_schedule_forced() {
+    let data = framadate::read_data("res/test/test_impossible.csv").unwrap();
+    let opts = SchedulingOptions {
+        ignore_empty_slots: true,
+    };
+    match scheduling::compute_all_schedules(&data, &opts) {
+        BestSchedules::None => panic!("Expected a solution to exist"),
+        _ => (),
+    }
+}
