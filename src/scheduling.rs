@@ -2,8 +2,17 @@ use crate::data::*;
 use std::collections::HashMap;
 use std::error::Error;
 
+#[derive(Debug)]
 pub struct SchedulingOptions {
     pub ignore_empty_slots: bool,
+}
+
+impl SchedulingOptions {
+    pub fn default() -> SchedulingOptions {
+        SchedulingOptions {
+            ignore_empty_slots: false,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -67,7 +76,6 @@ impl EvaluatedSchedule {
     }
 }
 
-//pub type BestSchedules = (Option<EvaluatedSchedule>, Option<EvaluatedSchedule>);
 #[derive(Debug, Clone)]
 pub enum BestSchedules {
     One(EvaluatedSchedule),
