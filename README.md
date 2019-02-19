@@ -1,5 +1,5 @@
 # framaschedule
-A library and command-line tool to schedule shifts based on poll responses
+A library and command-line tool to schedule shifts based on poll responses - written in rust.
 
 It currently only supports the CSV export from [Framadate](https://framadate.org/), hence the name.
 However, it is modular and can easily be extended for other sources.
