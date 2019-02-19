@@ -29,6 +29,22 @@ If a shift can not be filled, the program will abort. However, a placeholder cal
 
 Even though this program finds the optimal solutions, which ones are printed is random because the order in which they are tried is not fixed (this is due to a non-deterministic seed in Rust's HashMap).
 
+
+## Compiling and Running
+Assuming you have the [rust toolchain](https://rustup.rs/) installed:
+
+```bash
+git clone https://github.com/clawoflight/framaschedule
+
+cargo run --release -- $PATH_TO_CSV
+
+# or:
+cargo build --release
+./target/release/framaschedule $PATH_TO_CSV
+```
+
+
+
 ## Examples
 For the following input:
 
@@ -78,12 +94,3 @@ The algorithm optimizes for three things, in decreasing priority:
 
 This approach is not suited for large problem sizes or custom constraints.
 If that is your use-case, consider a heuristics-based system such as [OptaPlanner](https://www.optaplanner.org/).
-
-## Running
-
-```bash
-git clone https://github.com/clawoflight/framaschedule
-# git checkout v0.1  # once I tag releases
-cargo run --release -- --help
-```
-
