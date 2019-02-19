@@ -1,7 +1,7 @@
 use framaschedule::data::*;
 use framaschedule::framadate;
 use framaschedule::scheduling;
-use framaschedule::scheduling::BestSchedules;
+use framaschedule::scheduling::{BestSchedules, SchedulingOptions};
 
 #[macro_use]
 extern crate clap;
@@ -13,12 +13,16 @@ fn main() -> Result<(), Box<Error>> {
     (about: "Automatically find the best schedule fulfilling poll responses")
     (@arg POLLDATA: +required "The csv file exported from framadate")
     (@arg csv: --("export-csv") [output] "Output the best schedule in csv format")
+    (@arg ignore_empty: -f --("force-if-empty") "Ignore slots that cannot be filled")
     )
     .get_matches();
 
     let data = framadate::read_data(args.value_of("POLLDATA").unwrap())?;
 
-    let result = scheduling::compute_all_schedules(&data);
+    let options = SchedulingOptions {
+        ignore_empty_slots: args.is_present("ignore_empty"),
+    };
+    let result = scheduling::compute_all_schedules(&data, &options);
 
     if args.is_present("csv") {
         match result {

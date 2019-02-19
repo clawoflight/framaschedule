@@ -2,6 +2,10 @@ use crate::data::*;
 use std::collections::HashMap;
 use std::error::Error;
 
+pub struct SchedulingOptions {
+    pub ignore_empty_slots: bool,
+}
+
 #[derive(Debug, Clone)]
 pub struct ScheduleEntry {
     pub time: Slot,
@@ -93,13 +97,18 @@ fn keep_best(res: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
     }
 }
 
-pub fn compute_all_schedules(data: &PollData) -> BestSchedules {
+pub fn compute_all_schedules(data: &PollData, opts: &SchedulingOptions) -> BestSchedules {
     let mut r = BestSchedules::None;
-    compute_all_schedules_(data, vec![], &mut r);
+    compute_all_schedules_(data, opts, vec![], &mut r);
     r
 }
 
-fn compute_all_schedules_(data: &PollData, cur_sched: Schedule, results: &mut BestSchedules) {
+fn compute_all_schedules_(
+    data: &PollData,
+    opts: &SchedulingOptions,
+    cur_sched: Schedule,
+    results: &mut BestSchedules,
+) {
     // Allow early cutoff: don't assign people much more than necessary and calculate cost, but drop immediately
     let max_occur = data.len() / data[0].responses.len() + 1;
 
@@ -113,11 +122,17 @@ fn compute_all_schedules_(data: &PollData, cur_sched: Schedule, results: &mut Be
                 continue;
             }
             match response {
-                Response::No => (),
+                Response::No => {
+                    if opts.ignore_empty_slots {
+                        let mut new_sched = cur_sched.clone();
+                        new_sched.push(ScheduleEntry::new(day.time.to_owned(), "??".to_string()));
+                        compute_all_schedules_(data, opts, new_sched, results);
+                    }
+                }
                 _ => {
                     let mut new_sched = cur_sched.clone();
                     new_sched.push(ScheduleEntry::new(day.time.to_owned(), person.to_owned()));
-                    compute_all_schedules_(data, new_sched, results);
+                    compute_all_schedules_(data, opts, new_sched, results);
                 }
             }
         }
