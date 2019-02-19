@@ -126,6 +126,7 @@ fn compute_all_schedules_(
         let day = &data[cur_sched.len()];
         // NOTE since the hash is not deterministic, this implicitly shuffles the names
         for (person, response) in &day.responses {
+            // TODO this branch might have to be skipped if opts.ignore_empty_slots is set
             if occur(&cur_sched, person) == max_occur {
                 continue;
             }
