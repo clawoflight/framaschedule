@@ -148,17 +148,18 @@ fn calc_avg_distance_components(s: &Schedule) -> f32 {
     result
 }
 
-fn calc_ifneedbe_components(s: &Schedule, data: &PollData) -> f32 {
+fn calc_ifneedbe_components(s: &mut Schedule, data: &PollData) -> f32 {
     let mut result = 0.0;
-    for (i, person) in s.iter().map(|e| &e.name).enumerate() {
+    for (i, person) in s.iter_mut().map(|e| &mut e.name).enumerate() {
         if let Some(Response::IfNeedBe) = data[i].responses.get(person) {
-            result += 1.0;
+            result += 0.25;
+            person.push('?');
         }
     }
     result
 }
 
-fn evaluate(s: Schedule, data: &PollData) -> EvaluatedSchedule {
+fn evaluate(mut s: Schedule, data: &PollData) -> EvaluatedSchedule {
     let mut cost = 0.0;
     let mut person_occurrences = HashMap::new();
 
@@ -173,7 +174,7 @@ fn evaluate(s: Schedule, data: &PollData) -> EvaluatedSchedule {
         occ_stats.push((person.to_owned(), occ))
     }
     cost += calc_avg_distance_components(&s);
-    cost += calc_ifneedbe_components(&s, data);
+    cost += calc_ifneedbe_components(&mut s, data);
 
     EvaluatedSchedule::new(s, cost, occ_stats)
 }
