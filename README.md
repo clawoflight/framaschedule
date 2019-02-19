@@ -76,6 +76,8 @@ The algorithm optimizes for three things, in decreasing priority:
 2. Equal distance between occurrences (cost factor: ![1 divided by square of average distance for each person](http://www.sciweavers.org/upload/Tex2Img_1550579726/eqn.png))
 3. Minimal use of IfNeedBe responses (cost factor: 0.25 for every use)
 
+This approach is not suited for large problem sizes or custom constraints.
+If that is your use-case, consider a heuristics-based system such as [OptaPlanner](https://www.optaplanner.org/).
 
 ## Running
 
