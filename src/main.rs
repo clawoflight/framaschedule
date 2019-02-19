@@ -5,30 +5,18 @@ use framaschedule::scheduling::BestSchedules;
 
 #[macro_use]
 extern crate clap;
-use clap::{App, Arg};
 
 fn main() -> Result<(), Box<Error>> {
-    // TODO: try the macro version and see if I prefer it: https://docs.rs/clap/2.32.0/clap/
-    let args = App::new("framaschedule")
-        .about("Automatically find the best schedule based on poll data")
-        .version(crate_version!())
-        .author("Bennett Piater <bennett@piater.name>")
-        .arg(
-            Arg::with_name("POLL.csv")
-                .help("The csv file exported from framadate")
-                .required(true)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("csv")
-                .help("output the best schedule in csv format")
-                .long("export-csv")
-                .value_name("output")
-                .takes_value(true),
-        )
-        .get_matches();
+    let args = clap_app!(framaschedule =>
+    (version: crate_version!())
+    (author: "Bennett Piater <bennett@piater.name>")
+    (about: "Automatically find the best schedule fulfilling poll responses")
+    (@arg POLLDATA: +required "The csv file exported from framadate")
+    (@arg csv: --("export-csv") [output] "Output the best schedule in csv format")
+    )
+    .get_matches();
 
-    let data = framadate::read_data(args.value_of("POLL.csv").unwrap())?;
+    let data = framadate::read_data(args.value_of("POLLDATA").unwrap())?;
 
     let result = scheduling::compute_all_schedules(&data);
 
