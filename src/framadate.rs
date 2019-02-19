@@ -5,7 +5,6 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     let mut data = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
 
-    // TODO transform date to DD.MM for my use-case
     for time in rdr.headers()? {
         if time != "" {
             let (month, day) = scan_fmt!(time, "{*d}-{d}-{d}", i32, i32);
