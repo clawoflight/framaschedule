@@ -105,11 +105,32 @@ fn keep_best(res: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
     }
 }
 
+fn _merge_best(r1: BestSchedules, r2: BestSchedules) -> BestSchedules {
+    match r1 {
+        BestSchedules::None => r2,
+        BestSchedules::One(b1) => keep_best(&r2, b1),
+        BestSchedules::Two(b1, b2) => keep_best(&keep_best(&r2, b1), b2),
+    }
+}
+
 pub fn compute_all_schedules(data: &PollData, opts: &SchedulingOptions) -> BestSchedules {
     let mut r = BestSchedules::None;
+    // TODO: parallelize over the people of the first day, then merge the results of each thread using fold()
     compute_all_schedules_(data, opts, vec![], &mut r);
     r
 }
+
+// Alternative implementation
+// currently requires library features
+//
+// - build a schedule generator
+// - map to best schedule and fold
+// - collect the result into a var
+// This is at the very least an interesting academic exercise,
+// but the separation of concerns would also be more readable.
+// However, that would be hard to parallelize in divide-and-conquer
+// -- unless I modify the generator to begin with a specific name, which would work well.
+//
 
 fn compute_all_schedules_(
     data: &PollData,
