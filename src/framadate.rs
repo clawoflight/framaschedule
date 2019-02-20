@@ -1,5 +1,6 @@
 use crate::data::*;
 use csv::Reader;
+use scan_fmt::scan_fmt;
 
 pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     let mut data = Vec::new();

@@ -1,10 +1,8 @@
+use clap::{clap_app, crate_version};
 use framaschedule::data::*;
 use framaschedule::framadate;
 use framaschedule::scheduling;
 use framaschedule::scheduling::{BestSchedules, SchedulingOptions};
-
-#[macro_use]
-extern crate clap;
 
 fn main() -> Result<(), Box<Error>> {
     let args = clap_app!(framaschedule =>
