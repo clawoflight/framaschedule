@@ -85,6 +85,7 @@ Person2: 1
 
 ## Scheduling
 Scheduling is implemented as (brute-force) global cost minimization, while drastically reducing the search space using the assumption that no-one will be scheduled much more often than the rest.
+In order to somewhat speed up the search, it is parallelized over valid options for the first day using one thread for each physical cpu core.
 
 The algorithm optimizes for three things, in decreasing priority:
 
