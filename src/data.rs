@@ -1,6 +1,7 @@
 pub use simple_error::SimpleError;
 pub use std::collections::HashMap;
 pub use std::error::Error;
+use std::str::FromStr;
 
 #[derive(Debug)]
 pub enum Response {
@@ -9,8 +10,10 @@ pub enum Response {
     IfNeedBe,
 }
 
-impl Response {
-    pub fn from_str(s: &str) -> Result<Response, SimpleError> {
+impl FromStr for Response {
+    type Err = SimpleError;
+
+    fn from_str(s: &str) -> Result<Response, SimpleError> {
         match s {
             "Yes" => Ok(Response::Yes),
             "No" => Ok(Response::No),

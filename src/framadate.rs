@@ -38,9 +38,8 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
             } else if i - 1 == data.len() {
                 continue;
             }
-            data[i - 1]
-                .responses
-                .insert(name.to_owned(), Response::from_str(response)?);
+            let resp: Response = response.parse()?;
+            data[i - 1].responses.insert(name.to_owned(), resp);
         }
     }
 
