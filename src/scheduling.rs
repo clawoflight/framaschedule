@@ -30,7 +30,7 @@ impl ScheduleEntry {
 
 pub type Schedule = Vec<ScheduleEntry>;
 
-fn occur(s: &Schedule, n: &str) -> usize {
+fn occur(s: &[ScheduleEntry], n: &str) -> usize {
     s.iter().filter(|&e| e.name == n).count()
 }
 
@@ -117,7 +117,7 @@ impl BestSchedules {
     }
 }
 
-pub fn compute_all_schedules(data: &PollData, opts: &SchedulingOptions) -> BestSchedules {
+pub fn compute_all_schedules(data: &[PollColumn], opts: &SchedulingOptions) -> BestSchedules {
     let first_day = &data[0];
     // We are CPU-bound, so don't attempt hyper-threading
     let mut pool = Pool::new(num_cpus::get_physical() as u32);
@@ -176,7 +176,7 @@ pub fn compute_all_schedules(data: &PollData, opts: &SchedulingOptions) -> BestS
 //
 
 fn compute_all_schedules_(
-    data: &PollData,
+    data: &[PollColumn],
     opts: &SchedulingOptions,
     cur_sched: Schedule,
     results: &mut BestSchedules,
@@ -185,7 +185,7 @@ fn compute_all_schedules_(
     let max_occur = data.len() / data[0].responses.len() + 1;
 
     if cur_sched.len() == data.len() {
-        *results = BestSchedules::add(results, evaluate(cur_sched, &*data))
+        *results = BestSchedules::add(results, evaluate(cur_sched, data))
     } else {
         let day = &data[cur_sched.len()];
         // NOTE since the hash is not deterministic, this implicitly shuffles the names
@@ -212,13 +212,13 @@ fn compute_all_schedules_(
     }
 }
 
-fn calc_avg_distance_components(s: &Schedule) -> f32 {
+fn calc_avg_distance_components(s: &[ScheduleEntry]) -> f32 {
     let mut last_seen = HashMap::new();
     let mut dsts = HashMap::new();
 
     for (i, person) in s.iter().map(|e| &e.name).enumerate() {
         let last_seen_i = last_seen.entry(person).or_insert(i);
-        let dsts = dsts.entry(person).or_insert(Vec::new());
+        let dsts = dsts.entry(person).or_insert_with(Vec::new);
         let dst = (i - *last_seen_i) as f32;
         if dst > 0.0 {
             dsts.push(dst);
@@ -236,7 +236,7 @@ fn calc_avg_distance_components(s: &Schedule) -> f32 {
     result
 }
 
-fn calc_ifneedbe_components(s: &mut Schedule, data: &PollData) -> f32 {
+fn calc_ifneedbe_components(s: &mut Schedule, data: &[PollColumn]) -> f32 {
     let mut result = 0.0;
     for (i, person) in s.iter_mut().map(|e| &mut e.name).enumerate() {
         if let Some(Response::IfNeedBe) = data[i].responses.get(person) {
@@ -247,7 +247,7 @@ fn calc_ifneedbe_components(s: &mut Schedule, data: &PollData) -> f32 {
     result
 }
 
-fn evaluate(mut s: Schedule, data: &PollData) -> EvaluatedSchedule {
+fn evaluate(mut s: Schedule, data: &[PollColumn]) -> EvaluatedSchedule {
     let mut cost = 0.0;
     let mut person_occurrences = HashMap::new();
 
