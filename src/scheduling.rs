@@ -1,4 +1,5 @@
 use crate::data::*;
+use scoped_threadpool::Pool;
 use std::collections::HashMap;
 use std::error::Error;
 
@@ -83,45 +84,87 @@ pub enum BestSchedules {
     None,
 }
 
-fn keep_best(res: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
-    match res {
-        BestSchedules::One(r1) => {
-            if r1.cost > new.cost {
-                BestSchedules::Two(new, r1.clone())
-            } else {
-                BestSchedules::Two(r1.clone(), new)
+impl BestSchedules {
+    // NOTE Maybe this could implement the trait for `+`?
+    fn add(best: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
+        match best {
+            BestSchedules::One(r1) => {
+                if r1.cost > new.cost {
+                    BestSchedules::Two(new, r1.clone())
+                } else {
+                    BestSchedules::Two(r1.clone(), new)
+                }
             }
-        }
-        BestSchedules::Two(r1, r2) => {
-            if r1.cost > new.cost {
-                BestSchedules::Two(new, r1.clone())
-            } else if r2.cost > new.cost {
-                BestSchedules::Two(r1.clone(), new)
-            } else {
-                BestSchedules::Two(r1.clone(), r2.clone())
+            BestSchedules::Two(r1, r2) => {
+                if r1.cost > new.cost {
+                    BestSchedules::Two(new, r1.clone())
+                } else if r2.cost > new.cost {
+                    BestSchedules::Two(r1.clone(), new)
+                } else {
+                    BestSchedules::Two(r1.clone(), r2.clone())
+                }
             }
+            BestSchedules::None => BestSchedules::One(new),
         }
-        BestSchedules::None => BestSchedules::One(new),
     }
-}
 
-fn _merge_best(r1: BestSchedules, r2: BestSchedules) -> BestSchedules {
-    match r1 {
-        BestSchedules::None => r2,
-        BestSchedules::One(b1) => keep_best(&r2, b1),
-        BestSchedules::Two(b1, b2) => keep_best(&keep_best(&r2, b1), b2),
+    fn merge(r1: BestSchedules, r2: BestSchedules) -> BestSchedules {
+        match r1 {
+            BestSchedules::None => r2,
+            BestSchedules::One(b1) => BestSchedules::add(&r2, b1),
+            BestSchedules::Two(b1, b2) => BestSchedules::add(&BestSchedules::add(&r2, b1), b2),
+        }
     }
 }
 
 pub fn compute_all_schedules(data: &PollData, opts: &SchedulingOptions) -> BestSchedules {
-    let mut r = BestSchedules::None;
-    // TODO: parallelize over the people of the first day, then merge the results of each thread using fold()
-    compute_all_schedules_(data, opts, vec![], &mut r);
-    r
+    let first_day = &data[0];
+    // We are CPU-bound, so don't attempt hyper-threading
+    let mut pool = Pool::new(num_cpus::get_physical() as u32);
+
+    // Parallelize over the first day: one thread for the best solution starting with each name
+    let mut results = vec![BestSchedules::None; first_day.responses.len()];
+
+    // Using a scoped threadpool allows passing in non-static references.
+    // I need that because I know that the lifetime of the thread closures will not exceed that of this function.
+    pool.scoped(|scoped| {
+        // zip with results to avoid mutably indexing, which would confuse the borrow checker:
+        // It *looks* like multiple things depend on the vector, but they never actually collide
+        // (each thread gets it's own element)
+        for ((person, response), result) in first_day.responses.iter().zip(results.iter_mut()) {
+            match response {
+                Response::No => {
+                    if opts.ignore_empty_slots {
+                        let starting_sched = vec![ScheduleEntry::new(
+                            first_day.time.to_owned(),
+                            "??".to_string(),
+                        )];
+                        scoped.execute(move || {
+                            compute_all_schedules_(data, opts, starting_sched, result)
+                        });
+                    }
+                }
+                _ => {
+                    let starting_sched = vec![ScheduleEntry::new(
+                        first_day.time.to_owned(),
+                        person.to_owned(),
+                    )];
+                    scoped.execute(move || {
+                        compute_all_schedules_(data, opts, starting_sched, result)
+                    });
+                }
+            }
+        }
+    });
+
+    // Combine partial solutions
+    results.into_iter().fold(BestSchedules::None, |best, next| {
+        BestSchedules::merge(best, next)
+    })
 }
 
-// Alternative implementation
-// currently requires library features
+// Alternative implementation:
+// currently requires library features - wait for stabilization of `yield`
 //
 // - build a schedule generator
 // - map to best schedule and fold
@@ -142,7 +185,7 @@ fn compute_all_schedules_(
     let max_occur = data.len() / data[0].responses.len() + 1;
 
     if cur_sched.len() == data.len() {
-        *results = keep_best(results, evaluate(cur_sched, data))
+        *results = BestSchedules::add(results, evaluate(cur_sched, &*data))
     } else {
         let day = &data[cur_sched.len()];
         // NOTE since the hash is not deterministic, this implicitly shuffles the names

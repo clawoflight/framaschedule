@@ -5,7 +5,14 @@ authors = ["Bennett Piater <bennett@piater.name>"]
 edition = "2018"
 
 [dependencies]
+# import
 csv = "1.0"
 simple-error = "0.1"
 scan_fmt = "0.1"
+
+# CLI
 clap = "2.32"
+
+# parallelization
+scoped_threadpool = "0.1"
+num_cpus = "1.10"
