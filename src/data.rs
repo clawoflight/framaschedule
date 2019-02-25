@@ -1,12 +1,21 @@
+//! # Poll data representation
+//! This module describes the data structures for poll data.
+
 pub use simple_error::SimpleError;
-pub use std::collections::HashMap;
+use std::collections::HashMap;
 pub use std::error::Error;
 use std::str::FromStr;
 
+/// Represents a valid poll response.
+///
+/// IfNeedBe will be used as little as possible by the scheduling algorithm.
 #[derive(Debug)]
 pub enum Response {
+    /// The respondent can take a slot
     Yes,
+    /// The respondent cannot take a slot
     No,
+    /// The respondent is able to take a slot if necessary
     IfNeedBe,
 }
 
@@ -26,10 +35,15 @@ impl FromStr for Response {
     }
 }
 
+/// Marker type for string representation of slots
 pub type Slot = String;
+/// Marker type for string representation of names
 pub type Name = String;
 pub type PollData = Vec<PollColumn>;
 
+/// Represents the poll data for one slot.
+///
+/// It contains everyone's responses for one time slot in a `HashMap` indexed by name.
 #[derive(Debug)]
 pub struct PollColumn {
     pub time: Slot,
@@ -37,6 +51,9 @@ pub struct PollColumn {
 }
 
 impl PollColumn {
+    /// Create a new poll column for the given time.
+    ///
+    /// The responses hashmap is initialized as well.
     pub fn new(time: &str) -> PollColumn {
         PollColumn {
             time: time.to_owned(),

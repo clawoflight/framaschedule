@@ -1,15 +1,21 @@
+//! The scheduling functionality.
+//!
+//! This is probably in need of being refactored into smaller modules.
+
 use crate::data::*;
 use scoped_threadpool::Pool;
 use std::collections::HashMap;
 use std::error::Error;
 
+/// Options for the scheduling algorithm
 #[derive(Debug)]
 pub struct SchedulingOptions {
+    /// Whether to insert placeholders if a slot cannot be filled, or abort
     pub ignore_empty_slots: bool,
 }
 
-impl SchedulingOptions {
-    pub fn default() -> SchedulingOptions {
+impl Default for SchedulingOptions {
+    fn default() -> SchedulingOptions {
         SchedulingOptions {
             ignore_empty_slots: false,
         }
@@ -31,7 +37,9 @@ impl ScheduleEntry {
 pub type Schedule = Vec<ScheduleEntry>;
 
 fn occur(s: &[ScheduleEntry], n: &str) -> usize {
-    s.iter().filter(|&e| e.name == n).count()
+    s.iter()
+        .filter(|&ScheduleEntry { name, .. }| name == n)
+        .count()
 }
 
 #[derive(Debug, Clone)]
@@ -50,6 +58,7 @@ impl EvaluatedSchedule {
         }
     }
 
+    // TODO impl Display instead
     pub fn print(&self) {
         let mut counts = self.name_counts.clone();
         counts.sort();
@@ -117,6 +126,7 @@ impl BestSchedules {
     }
 }
 
+/// Find the global cost minimum of all valid schedules
 pub fn compute_all_schedules(data: &[PollColumn], opts: &SchedulingOptions) -> BestSchedules {
     let first_day = &data[0];
     // We are CPU-bound, so don't attempt hyper-threading
@@ -133,17 +143,17 @@ pub fn compute_all_schedules(data: &[PollColumn], opts: &SchedulingOptions) -> B
         // (each thread gets it's own element)
         for ((person, response), result) in first_day.responses.iter().zip(results.iter_mut()) {
             match response {
-                Response::No => {
-                    if opts.ignore_empty_slots {
-                        let starting_sched = vec![ScheduleEntry::new(
-                            first_day.time.to_owned(),
-                            "??".to_string(),
-                        )];
-                        scoped.execute(move || {
-                            compute_all_schedules_(data, opts, starting_sched, result)
-                        });
-                    }
+                // TODO only execute this if *all* responses are no, for performance
+                Response::No if opts.ignore_empty_slots => {
+                    let starting_sched = vec![ScheduleEntry::new(
+                        first_day.time.to_owned(),
+                        "??".to_string(),
+                    )];
+                    scoped.execute(move || {
+                        compute_all_schedules_(data, opts, starting_sched, result)
+                    });
                 }
+                Response::No => (),
                 _ => {
                     let starting_sched = vec![ScheduleEntry::new(
                         first_day.time.to_owned(),
@@ -195,13 +205,13 @@ fn compute_all_schedules_(
                 continue;
             }
             match response {
-                Response::No => {
-                    if opts.ignore_empty_slots {
-                        let mut new_sched = cur_sched.clone();
-                        new_sched.push(ScheduleEntry::new(day.time.to_owned(), "??".to_string()));
-                        compute_all_schedules_(data, opts, new_sched, results);
-                    }
+                // TODO only execute this if *all* responses are no, for performance
+                Response::No if opts.ignore_empty_slots => {
+                    let mut new_sched = cur_sched.clone();
+                    new_sched.push(ScheduleEntry::new(day.time.to_owned(), "??".to_string()));
+                    compute_all_schedules_(data, opts, new_sched, results);
                 }
+                Response::No => (),
                 _ => {
                     let mut new_sched = cur_sched.clone();
                     new_sched.push(ScheduleEntry::new(day.time.to_owned(), person.to_owned()));

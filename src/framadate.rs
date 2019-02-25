@@ -1,7 +1,13 @@
+//! # Framadate import
+//! This module can load data exported from [Framadate](https://framadate.org/).
+
 use crate::data::*;
 use csv::Reader;
 use scan_fmt::scan_fmt;
 
+/// Reads data formatted like that from Framadate.
+///
+/// If you are interested in that format specifically, check out `res/test/test_poll.csv`
 pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     let mut data = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
