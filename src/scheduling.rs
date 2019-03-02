@@ -23,34 +23,43 @@ impl Default for SchedulingOptions {
 }
 
 #[derive(Debug, Clone)]
-pub struct ScheduleEntry {
-    pub time: Slot,
-    pub name: Name,
+pub struct ScheduleEntry<'data, 'b> {
+    pub time: &'data Slot,
+    pub name: &'b str,
+    pub ifneedbe: bool,
 }
 
-impl ScheduleEntry {
-    fn new(time: Slot, name: Name) -> ScheduleEntry {
-        ScheduleEntry { time, name }
+impl<'data, 'b> ScheduleEntry<'data, 'b> {
+    fn new(time: &'data Slot, name: &'b str) -> ScheduleEntry<'data, 'b> {
+        ScheduleEntry {
+            time,
+            name,
+            ifneedbe: false,
+        }
     }
 }
 
-pub type Schedule = Vec<ScheduleEntry>;
+pub type Schedule<'data, 'b> = Vec<ScheduleEntry<'data, 'b>>;
 
 fn occur(s: &[ScheduleEntry], n: &str) -> usize {
     s.iter()
-        .filter(|&ScheduleEntry { name, .. }| name == n)
+        .filter(|&ScheduleEntry { name, .. }| *name == n)
         .count()
 }
 
 #[derive(Debug, Clone)]
-pub struct EvaluatedSchedule {
-    pub entries: Schedule,
+pub struct EvaluatedSchedule<'data, 'b> {
+    pub entries: Schedule<'data, 'b>,
     pub cost: f32,
-    pub name_counts: Vec<(Name, usize)>,
+    pub name_counts: Vec<(&'b str, usize)>,
 }
 
-impl EvaluatedSchedule {
-    fn new(entries: Schedule, cost: f32, name_counts: Vec<(Name, usize)>) -> EvaluatedSchedule {
+impl<'data, 'b> EvaluatedSchedule<'data, 'b> {
+    fn new(
+        entries: Schedule<'data, 'b>,
+        cost: f32,
+        name_counts: Vec<(&'b str, usize)>,
+    ) -> EvaluatedSchedule<'data, 'b> {
         EvaluatedSchedule {
             entries,
             cost,
@@ -64,7 +73,12 @@ impl EvaluatedSchedule {
         counts.sort();
 
         for entry in &self.entries {
-            println!("{}:\t{}", entry.time, entry.name);
+            println!(
+                "{}:\t{}{}",
+                entry.time,
+                entry.name,
+                if entry.ifneedbe { "?" } else { "" }
+            );
         }
         println!("\nCost: {}", self.cost);
         println!("\nStats:");
@@ -76,10 +90,10 @@ impl EvaluatedSchedule {
 
     pub fn write_csv(&self, path: &str) -> Result<(), Box<Error>> {
         let mut writer = csv::Writer::from_path(path)?;
-        writer.write_record(&["slot", "name"])?;
+        writer.write_record(&["slot", "name", "ifneedbe"])?;
 
         for entry in &self.entries {
-            writer.write_record(&[&entry.time, &entry.name])?;
+            writer.write_record(&[&entry.time, entry.name, &entry.ifneedbe.to_string()])?;
         }
         writer.flush()?;
         Ok(())
@@ -87,15 +101,18 @@ impl EvaluatedSchedule {
 }
 
 #[derive(Debug, Clone)]
-pub enum BestSchedules {
-    One(EvaluatedSchedule),
-    Two(EvaluatedSchedule, EvaluatedSchedule),
+pub enum BestSchedules<'data, 'b> {
+    One(EvaluatedSchedule<'data, 'b>),
+    Two(EvaluatedSchedule<'data, 'b>, EvaluatedSchedule<'data, 'b>),
     None,
 }
 
-impl BestSchedules {
+impl<'data, 'b> BestSchedules<'data, 'b> {
     // NOTE Maybe this could implement the trait for `+`?
-    fn add(best: &BestSchedules, new: EvaluatedSchedule) -> BestSchedules {
+    fn add(
+        best: &BestSchedules<'data, 'b>,
+        new: EvaluatedSchedule<'data, 'b>,
+    ) -> BestSchedules<'data, 'b> {
         match best {
             BestSchedules::One(r1) => {
                 if r1.cost > new.cost {
@@ -117,7 +134,10 @@ impl BestSchedules {
         }
     }
 
-    fn merge(r1: BestSchedules, r2: BestSchedules) -> BestSchedules {
+    fn merge(
+        r1: BestSchedules<'data, 'b>,
+        r2: BestSchedules<'data, 'b>,
+    ) -> BestSchedules<'data, 'b> {
         match r1 {
             BestSchedules::None => r2,
             BestSchedules::One(b1) => BestSchedules::add(&r2, b1),
@@ -127,7 +147,13 @@ impl BestSchedules {
 }
 
 /// Find the global cost minimum of all valid schedules
-pub fn compute_all_schedules(data: &[PollColumn], opts: &SchedulingOptions) -> BestSchedules {
+pub fn compute_all_schedules<'data, 'b>(
+    data: &'data [PollColumn],
+    opts: &SchedulingOptions,
+) -> BestSchedules<'data, 'b>
+where
+    'data: 'b,
+{
     let first_day = &data[0];
     // We are CPU-bound, so don't attempt hyper-threading
     let mut pool = Pool::new(num_cpus::get_physical() as u32);
@@ -145,20 +171,14 @@ pub fn compute_all_schedules(data: &[PollColumn], opts: &SchedulingOptions) -> B
             match response {
                 // TODO only execute this if *all* responses are no, for performance
                 Response::No if opts.ignore_empty_slots => {
-                    let starting_sched = vec![ScheduleEntry::new(
-                        first_day.time.to_owned(),
-                        "??".to_string(),
-                    )];
+                    let starting_sched = vec![ScheduleEntry::new(&first_day.time, "??")];
                     scoped.execute(move || {
                         compute_all_schedules_(data, opts, starting_sched, result)
                     });
                 }
                 Response::No => (),
                 _ => {
-                    let starting_sched = vec![ScheduleEntry::new(
-                        first_day.time.to_owned(),
-                        person.to_owned(),
-                    )];
+                    let starting_sched = vec![ScheduleEntry::new(&first_day.time, &person)];
                     scoped.execute(move || {
                         compute_all_schedules_(data, opts, starting_sched, result)
                     });
@@ -185,12 +205,14 @@ pub fn compute_all_schedules(data: &[PollColumn], opts: &SchedulingOptions) -> B
 // -- unless I modify the generator to begin with a specific name, which would work well.
 //
 
-fn compute_all_schedules_(
-    data: &[PollColumn],
+fn compute_all_schedules_<'data, 'b>(
+    data: &'data [PollColumn],
     opts: &SchedulingOptions,
-    cur_sched: Schedule,
-    results: &mut BestSchedules,
-) {
+    cur_sched: Schedule<'data, 'b>,
+    results: &mut BestSchedules<'data, 'b>,
+) where
+    'data: 'b,
+{
     // Allow early cutoff: don't assign people much more than necessary and calculate cost, but drop immediately
     let max_occur = data.len() / data[0].responses.len() + 1;
 
@@ -205,16 +227,16 @@ fn compute_all_schedules_(
                 continue;
             }
             match response {
-                // TODO only execute this if *all* responses are no, for performance
+                // TODO only execute this if *all* responses are no, for performance --> use a bool var outside of loop and move this after
                 Response::No if opts.ignore_empty_slots => {
                     let mut new_sched = cur_sched.clone();
-                    new_sched.push(ScheduleEntry::new(day.time.to_owned(), "??".to_string()));
+                    new_sched.push(ScheduleEntry::new(&day.time, "??"));
                     compute_all_schedules_(data, opts, new_sched, results);
                 }
                 Response::No => (),
                 _ => {
                     let mut new_sched = cur_sched.clone();
-                    new_sched.push(ScheduleEntry::new(day.time.to_owned(), person.to_owned()));
+                    new_sched.push(ScheduleEntry::new(&day.time, &person));
                     compute_all_schedules_(data, opts, new_sched, results);
                 }
             }
@@ -248,16 +270,19 @@ fn calc_avg_distance_components(s: &[ScheduleEntry]) -> f32 {
 
 fn calc_ifneedbe_components(s: &mut Schedule, data: &[PollColumn]) -> f32 {
     let mut result = 0.0;
-    for (i, person) in s.iter_mut().map(|e| &mut e.name).enumerate() {
-        if let Some(Response::IfNeedBe) = data[i].responses.get(person) {
+    for (i, entry) in s.iter_mut().enumerate() {
+        if let Some(Response::IfNeedBe) = data[i].responses.get(entry.name) {
             result += 0.25;
-            person.push('?');
+            entry.ifneedbe = true;
         }
     }
     result
 }
 
-fn evaluate(mut s: Schedule, data: &[PollColumn]) -> EvaluatedSchedule {
+fn evaluate<'data, 'b>(
+    mut s: Schedule<'data, 'b>,
+    data: &[PollColumn],
+) -> EvaluatedSchedule<'data, 'b> {
     let mut cost = 0.0;
     let mut person_occurrences = HashMap::new();
 
@@ -269,7 +294,7 @@ fn evaluate(mut s: Schedule, data: &[PollColumn]) -> EvaluatedSchedule {
     let mut occ_stats = Vec::new();
     for (person, occ) in person_occurrences {
         cost += (occ * occ) as f32;
-        occ_stats.push((person.to_owned(), occ))
+        occ_stats.push((*person, occ))
     }
     cost += calc_avg_distance_components(&s);
     cost += calc_ifneedbe_components(&mut s, data);
