@@ -169,7 +169,6 @@ where
         // (each thread gets it's own element)
         for ((person, response), result) in first_day.responses.iter().zip(results.iter_mut()) {
             match response {
-                // TODO only execute this if *all* responses are no, for performance
                 Response::No if opts.ignore_empty_slots => {
                     let starting_sched = vec![ScheduleEntry::new(&first_day.time, "??")];
                     scoped.execute(move || {
@@ -221,25 +220,26 @@ fn compute_all_schedules_<'data, 'b>(
     } else {
         let day = &data[cur_sched.len()];
         // NOTE since the hash is not deterministic, this implicitly shuffles the names
+        let mut valid_response_found = false;
         for (person, response) in &day.responses {
             // TODO this branch might have to be skipped if opts.ignore_empty_slots is set
             if occur(&cur_sched, person) == max_occur {
                 continue;
             }
             match response {
-                // TODO only execute this if *all* responses are no, for performance --> use a bool var outside of loop and move this after
-                Response::No if opts.ignore_empty_slots => {
-                    let mut new_sched = cur_sched.clone();
-                    new_sched.push(ScheduleEntry::new(&day.time, "??"));
-                    compute_all_schedules_(data, opts, new_sched, results);
-                }
                 Response::No => (),
                 _ => {
+                    valid_response_found = true;
                     let mut new_sched = cur_sched.clone();
                     new_sched.push(ScheduleEntry::new(&day.time, &person));
                     compute_all_schedules_(data, opts, new_sched, results);
                 }
             }
+        }
+        if !valid_response_found && opts.ignore_empty_slots {
+            let mut new_sched = cur_sched.clone();
+            new_sched.push(ScheduleEntry::new(&day.time, "??"));
+            compute_all_schedules_(data, opts, new_sched, results);
         }
     }
 }
