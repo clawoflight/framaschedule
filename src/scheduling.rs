@@ -260,7 +260,8 @@ fn calc_avg_distance_components(s: &[ScheduleEntry]) -> f32 {
 
     let mut result = 0.0;
     for dsts in dsts.values() {
-        let avg_dst: f32 = dsts.iter().sum();
+        let dst_sum: f32 = dsts.iter().sum();
+        let avg_dst = dst_sum / dsts.len() as f32;
         if avg_dst > 0.0 {
             result += 1.0 / (avg_dst * avg_dst);
         }
@@ -274,6 +275,10 @@ fn calc_ifneedbe_components(s: &mut Schedule, data: &[PollColumn]) -> f32 {
         if let Some(Response::IfNeedBe) = data[i].responses.get(entry.name) {
             result += 0.25;
             entry.ifneedbe = true;
+        }
+        // Penalize using placeholders
+        if entry.name == "??" {
+            result += 5.0;
         }
     }
     result
