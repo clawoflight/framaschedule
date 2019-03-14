@@ -3,7 +3,6 @@
 
 use crate::data::*;
 use csv::Reader;
-use scan_fmt::scan_fmt;
 
 /// Reads data formatted like that from Framadate.
 ///
@@ -12,7 +11,7 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     let mut data: PollData = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
 
-    // Parse the months
+    // Parse the top-level unit of time (always months AFAICT)
     for time in rdr.headers()?.iter().skip(1) {
         match time {
             // Only new days are included in the csv...
@@ -20,21 +19,18 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
             _ => data.push(PollColumn::new(time)),
         }
     }
-    for (i, r) in rdr.records().enumerate() {
-        // Parse the days and times
-        // TODO check whether r[0] is "" instead of checking if i is in [0, 1].
-        if i == 0 || i == 1 {
-            for (i, time) in r?.iter().enumerate() {
-                if i == 0 {
-                    continue;
-                }
-                data[i - 1].time += &format!(" {}", time);
+    for r in rdr.records() {
+        let r = r?;
+        // Add day and time if they exist - checking for the absence of a name
+        if &r[0] == "" {
+            for (time, poll_column) in r.iter().skip(1).zip(&mut data) {
+                poll_column.time += &format!(" {}", time);
             }
             continue;
         }
 
         let mut name = "";
-        for (i, response) in r?.iter().enumerate() {
+        for (i, response) in r.iter().enumerate() {
             // The first "response" is the participant name
             if i == 0 {
                 name = response;
