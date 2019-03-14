@@ -24,10 +24,11 @@ fn main() -> Result<(), Box<Error>> {
     )
     .get_matches();
 
+    let data_file = args.value_of("POLLDATA").unwrap();
     let data = match value_t!(args.value_of("format"), Format).unwrap_or_else(|_| Format::Framadate)
     {
-        Format::Framadate => framadate::read_data(args.value_of("POLLDATA").unwrap())?,
-        Format::Doodle => doodle::read_data(args.value_of("POLLDATA").unwrap())?,
+        Format::Framadate => framadate::read_data(data_file)?,
+        Format::Doodle => doodle::read_data(data_file)?,
     };
 
     let options = SchedulingOptions {

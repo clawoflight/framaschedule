@@ -1,31 +1,34 @@
 # framaschedule
 A library and command-line tool to schedule shifts based on poll responses - written in rust.
 
-It currently only supports the CSV export from [Framadate](https://framadate.org/), hence the name.
+It originally only supported the CSV export from [Framadate](https://framadate.org/), hence the name, but support for Doodle has been added.
 However, it is modular and can easily be extended for other sources.
 
 ## Usage
 
 ```
 USAGE:
-    framaschedule [FLAGS] [OPTIONS] <POLLDATA>
+    framaschedule [FLAGS] [OPTIONS] <POLLDATA> --format <format>
 
 FLAGS:
     -h, --help              Prints help information
-    -f, --force-if-empty    Ignore slots that cannot be filled
+    -F, --force-if-empty    Ignore slots that cannot be filled
     -V, --version           Prints version information
 
 OPTIONS:
         --export-csv <output>    Output the best schedule in csv format
+    -f, --format <format>        The format of the input file - framadate or doodle
 
 ARGS:
-    <POLLDATA>    The csv file exported from framadate
+    <POLLDATA>    The csv file with the poll data
 ```
 
 By default, the best 2 schedules will be printed to `stdout`.
 It is also possible to export the best schedule to a csv file, which can e.g. be opened in Excel.
 
-If a shift can not be filled, the program will abort. However, a placeholder called `??` can be scheduled for unfillable shifts instead if required.
+In order to schedule the results of a Doodle poll, export it to an Excel file and then run that through `doodle-xls-2-csv.sh`, which will convert and sanitize the data into a format that can be processed sanely.
+
+If a shift can not be filled, the program will abort. However, a placeholder called `??` can be scheduled for unfillable shifts instead if required (by specifying `--force-if-empty`).
 
 Even though this program finds the optimal solutions, which ones are printed is random because the order in which they are tried is not fixed (this is due to a non-deterministic seed in Rust's HashMap).
 
@@ -36,11 +39,11 @@ Assuming you have the [rust toolchain](https://rustup.rs/) installed:
 ```bash
 git clone https://github.com/clawoflight/framaschedule
 
-cargo run --release -- $PATH_TO_CSV
+cargo run --release -- -f framadate $PATH_TO_CSV
 
 # or:
 cargo build --release
-./target/release/framaschedule $PATH_TO_CSV
+./target/release/framaschedule -f framadate $PATH_TO_CSV
 ```
 
 
