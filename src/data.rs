@@ -9,7 +9,7 @@ use std::str::FromStr;
 /// Represents a valid poll response.
 ///
 /// IfNeedBe will be used as little as possible by the scheduling algorithm.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Response {
     /// The respondent can take a slot
     Yes,
@@ -17,6 +17,20 @@ pub enum Response {
     No,
     /// The respondent is able to take a slot if necessary
     IfNeedBe,
+}
+
+impl Response {
+    pub fn from_doodle_str(s: &str) -> Result<Response, SimpleError> {
+        match s {
+            "OK" => Ok(Response::Yes),
+            "(OK)" => Ok(Response::IfNeedBe),
+            "" => Ok(Response::No),
+            _ => Err(SimpleError::new(format!(
+                "Invalid doodle response string: {}",
+                s
+            ))),
+        }
+    }
 }
 
 impl FromStr for Response {
@@ -44,7 +58,7 @@ pub type PollData = Vec<PollColumn>;
 /// Represents the poll data for one slot.
 ///
 /// It contains everyone's responses for one time slot in a `HashMap` indexed by name.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PollColumn {
     pub time: Slot,
     pub responses: HashMap<Name, Response>,

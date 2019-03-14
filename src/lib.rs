@@ -6,4 +6,6 @@ pub mod data;
 
 pub mod framadate;
 
+pub mod doodle;
+
 pub mod scheduling;

@@ -33,3 +33,5 @@ fn impossible_schedule_forced() {
         _ => (),
     }
 }
+
+// TODO add tests for doodle
