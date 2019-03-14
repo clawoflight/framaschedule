@@ -1,12 +1,12 @@
-//! # Framadate import
-//! This module can load data exported from [Framadate](https://framadate.org/).
+//! # Doodle import
+//! This module can load data exported from [Doodle](https://doodle.com).
 
 use crate::data::*;
 use csv::Reader;
 
-/// Reads data formatted like that from Framadate.
+/// Reads data formatted like that from Doodle.
 ///
-/// If you are interested in that format specifically, check out `res/test/test_poll.csv`
+/// You absolutely need to preprocess the doodle export using `doodle-xls-2-csv.sh`!
 pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     let mut data: PollData = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;

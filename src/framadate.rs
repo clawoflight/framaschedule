@@ -25,23 +25,19 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
     for (i, r) in rdr.records().enumerate() {
         // Parse the times
         if i == 0 {
-            for (i, time) in r?.iter().enumerate() {
-                if i == 0 || i - 1 == data.len() {
-                    continue;
-                }
-                data[i - 1].time += &format!(" {}", time);
+            // Skip empty name, ignore trailing empty column
+            for (time, poll_column) in r?.iter().skip(1).take(data.len()).zip(&mut data) {
+                poll_column.time += &format!(" {}", time);
             }
             continue;
         }
 
         let mut name = "";
-        for (i, response) in r?.iter().enumerate() {
+        // Ignore empty trailing column
+        for (i, response) in r?.iter().take(data.len() + 1).enumerate() {
             // The first "response" is the participant name
             if i == 0 {
                 name = response;
-                continue;
-            // The last field is empty
-            } else if i - 1 == data.len() {
                 continue;
             }
             let resp: Response = response.parse()?;
