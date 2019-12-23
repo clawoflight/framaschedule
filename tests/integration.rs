@@ -28,9 +28,8 @@ fn impossible_schedule_forced() {
     let opts = SchedulingOptions {
         ignore_empty_slots: true,
     };
-    match scheduling::compute_all_schedules(&data, &opts) {
-        BestSchedules::None => panic!("Expected a solution to exist"),
-        _ => (),
+    if let BestSchedules::None = scheduling::compute_all_schedules(&data, &opts) {
+        panic!("Expected a solution to exist")
     }
 }
 

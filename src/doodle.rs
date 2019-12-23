@@ -7,7 +7,7 @@ use csv::Reader;
 /// Reads data formatted like that from Doodle.
 ///
 /// You absolutely need to preprocess the doodle export using `doodle-xls-2-csv.sh`!
-pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
+pub fn read_data(file_name: &str) -> Result<PollData, Box<dyn Error>> {
     let mut data: PollData = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
 

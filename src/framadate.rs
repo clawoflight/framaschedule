@@ -8,17 +8,17 @@ use scan_fmt::scan_fmt;
 /// Reads data formatted like that from Framadate.
 ///
 /// If you are interested in that format specifically, check out `res/test/test_poll.csv`
-pub fn read_data(file_name: &str) -> Result<PollData, Box<Error>> {
+pub fn read_data(file_name: &str) -> Result<PollData, Box<dyn Error>> {
     let mut data = Vec::new();
     let mut rdr = Reader::from_path(file_name)?;
 
     for time in rdr.headers()? {
         if time != "" {
-            let (month, day) = scan_fmt!(time, "{*d}-{d}-{d}", i32, i32);
+            let (month, day) = scan_fmt!(time, "{*d}-{d}-{d}", i32, i32)?;
             data.push(PollColumn::new(&format!(
                 "{:02}.{:02}.",
-                day.unwrap(),
-                month.unwrap()
+                day,
+                month
             )));
         }
     }

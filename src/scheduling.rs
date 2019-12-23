@@ -88,7 +88,7 @@ impl<'data, 'b> EvaluatedSchedule<'data, 'b> {
         println!();
     }
 
-    pub fn write_csv(&self, path: &str) -> Result<(), Box<Error>> {
+    pub fn write_csv(&self, path: &str) -> Result<(), Box<dyn Error>> {
         let mut writer = csv::Writer::from_path(path)?;
         writer.write_record(&["slot", "name", "ifneedbe"])?;
 

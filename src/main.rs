@@ -1,4 +1,4 @@
-use clap::{_clap_count_exprs, arg_enum, clap_app, crate_version, value_t};
+use clap::{arg_enum, clap_app, crate_version, value_t};
 use framaschedule::data::*;
 use framaschedule::scheduling;
 use framaschedule::scheduling::{BestSchedules, SchedulingOptions};
@@ -12,7 +12,7 @@ arg_enum! {
     }
 }
 
-fn main() -> Result<(), Box<Error>> {
+fn main() -> Result<(), Box<dyn Error>> {
     let args = clap_app!(framaschedule =>
     (version: crate_version!())
     (author: "Bennett Piater <bennett@piater.name>")
