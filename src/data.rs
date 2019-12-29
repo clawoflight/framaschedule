@@ -38,9 +38,9 @@ impl FromStr for Response {
 
     fn from_str(s: &str) -> Result<Response, SimpleError> {
         match s {
-            "Yes" => Ok(Response::Yes),
-            "No" => Ok(Response::No),
-            "Ifneedbe" | "IfNeedBe" => Ok(Response::IfNeedBe),
+            "Yes" | "Ja" => Ok(Response::Yes),
+            "No" | "Nein" => Ok(Response::No),
+            "Ifneedbe" | "IfNeedBe" | "Wenn notwendig" => Ok(Response::IfNeedBe),
             _ => Err(SimpleError::new(format!(
                 "Invalid framadate response string: {}",
                 s
