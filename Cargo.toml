@@ -6,21 +6,21 @@ edition = "2018"
 
 [dependencies]
 # import
-csv = "1.1.1"
-simple-error = "0.2.1"
-scan_fmt = "0.2.4"
+csv = "1.1.6"
+simple-error = "0.2.3"
+scan_fmt = "0.2.6"
 
 # CLI
 clap = "2.33.0"
 
 # parallelization
 scoped_threadpool = "0.1.9"
-num_cpus = "1.11.1"
+num_cpus = "1.13.1"
 
 # web
-rand = "0.7.2"
-rocket = "0.4.2"
-rocket_contrib = {version = "0.4.2", default-features = false, features = ["json"]}
-rocket_cors = "0.5.1"
-serde = {version = "1.0.104", features = ["derive"]}
-serde_json = "1.0.44"
+rand = "0.8.4"
+rocket = "0.4.10"
+rocket_contrib = { version = "0.4.10", default-features = false, features = ["json"] }
+rocket_cors = "0.5.2"
+serde = { version = "1.0.133", features = ["derive"] }
+serde_json = "1.0.74"
