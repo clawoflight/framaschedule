@@ -1,4 +1,5 @@
 use framaschedule::framadate;
+use framaschedule::nextcloud;
 use framaschedule::scheduling;
 use framaschedule::scheduling::{BestSchedules, SchedulingOptions};
 
@@ -10,6 +11,16 @@ fn known_schedule_cost() {
     {
         assert_eq!(4.0, r1.cost);
         assert_eq!(4.0, r2.cost);
+    }
+}
+
+#[test]
+fn test_nextcloud() {
+    let data = nextcloud::read_data("res/test/test_nextcloud.csv").unwrap();
+    if let BestSchedules::None =
+        scheduling::compute_all_schedules(&data, &SchedulingOptions::default())
+    {
+        panic!("Expected a solution to exist")
     }
 }
 

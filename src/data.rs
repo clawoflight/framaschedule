@@ -31,6 +31,18 @@ impl Response {
             ))),
         }
     }
+
+    pub fn from_nextcloud_str(s: &str) -> Result<Response, SimpleError> {
+        match s {
+            "✔" => Ok(Response::Yes),
+            "❔" => Ok(Response::IfNeedBe),
+            "❌" | "" => Ok(Response::No),
+            _ => Err(SimpleError::new(format!(
+                "Invalid nextcloud response string: '{}'",
+                s
+            ))),
+        }
+    }
 }
 
 impl FromStr for Response {

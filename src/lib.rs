@@ -8,4 +8,6 @@ pub mod framadate;
 
 pub mod doodle;
 
+pub mod nextcloud;
+
 pub mod scheduling;

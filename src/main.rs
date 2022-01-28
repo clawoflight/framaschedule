@@ -2,13 +2,14 @@ use clap::{arg_enum, clap_app, crate_version, value_t};
 use framaschedule::data::*;
 use framaschedule::scheduling;
 use framaschedule::scheduling::{BestSchedules, SchedulingOptions};
-use framaschedule::{doodle, framadate};
+use framaschedule::{doodle, framadate, nextcloud};
 
 arg_enum! {
     #[derive(PartialEq, Debug)]
     pub enum Format {
         Framadate,
-        Doodle
+        Doodle,
+        Nextcloud
     }
 }
 
@@ -19,7 +20,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     (about: "Automatically find the best schedule fulfilling poll responses")
     (@arg csv: --("export-csv") [output] "Output the best schedule in csv format")
     (@arg ignore_empty: -F --("force-if-empty") "Ignore slots that cannot be filled")
-    (@arg format: -f --format <format> +case_insensitive "The format of the input file - framadate or doodle")
+    (@arg format: -f --format <format> +case_insensitive "The format of the input file - framadate, nextcloud or doodle")
     (@arg POLLDATA: +required "The csv file with the poll data")
     )
     .get_matches();
@@ -29,6 +30,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     {
         Format::Framadate => framadate::read_data(data_file)?,
         Format::Doodle => doodle::read_data(data_file)?,
+        Format::Nextcloud => nextcloud::read_data(data_file)?,
     };
 
     let options = SchedulingOptions {
