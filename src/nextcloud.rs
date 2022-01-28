@@ -2,6 +2,7 @@
 //! This module can load data exported from [Nextcloud](https://nextcloud.org/).
 
 use crate::data::*;
+use chrono::NaiveDateTime;
 use csv::Reader;
 use scan_fmt::scan_fmt;
 
@@ -22,7 +23,11 @@ pub fn read_data(file_name: &str) -> Result<PollData, Box<dyn Error>> {
             // Skip "from" column
             for time in r?.iter().skip(1) {
                 // TODO: attempt parsing the date and returning a short RFC string if possible?
-                data.push(PollColumn::new(time))
+                if let Ok(parsed) = NaiveDateTime::parse_from_str(time, "%a, %b %e, %Y %l:%M %p") {
+                    data.push(PollColumn::new(&parsed.format("%Y-%m-%d").to_string()))
+                } else {
+                    data.push(PollColumn::new(time))
+                }
             }
             continue;
         }

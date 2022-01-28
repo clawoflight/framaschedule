@@ -9,6 +9,7 @@ edition = "2018"
 csv = "1.1.6"
 simple-error = "0.2.3"
 scan_fmt = "0.2.6"
+chrono = "0.4.19"
 
 # CLI
 clap = "2.33.0"
